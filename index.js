@@ -17,7 +17,7 @@ const initialUserState= {
 }
 
 
-//action
+//action- Object- type, payload
 const incrementCounterAction =() => {
     return {
         type: INCREMENT,
@@ -36,5 +36,25 @@ const addUser=()=>{
         payload: {
             name: 'shakil'
         }
+    }
+}
+
+//create reducer for counter
+const counterReducer=(state, action)=>{
+    switch(action.type){
+        case INCREMENT:
+            return{
+                ...state,
+                count: state.count + 1
+            }
+
+        case DECREMENT:
+            return{
+                ...state,
+                count: state.count - 1
+            }
+
+        default:
+             state;
     }
 }
