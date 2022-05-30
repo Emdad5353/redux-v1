@@ -1,75 +1,92 @@
+// async actions - api calling
+// api url - https://jsonplaceholder.typicode.com/todos
+// middleware- redux-thunk
+// axios api
+
+const { default: axios } = require("axios");
 const { createStore, applyMiddleware } = require("redux");
-const { default: logger } = require("redux-logger");
+const reduxThunk = require("redux-thunk").default;
 
-const INCREMENT = "INCREMENT";
-const DECREMENT = "DECREMENT";
-const RESET = "RESET";
-const INCREMENT_BY_VALUE = "INCREMENT_BY_VALUE";
+// define constants
+const GET_TODOS_REQUEST = "GET_TODOS_REQUEST";
+const GET_TODOS_SUCCESS = "GET_TODOS_SUCCESS";
+const GET_TODOS_FAILED = "GET_TODOS_FAILED";
+const TODOS_URL = "https://jsonplaceholder.typicode.com/todos";
 
-const initialCounterState = {
-  count: 0,
+// define state
+const initialTodosState = {
+  todos: [],
+  isLoading: false,
+  error: null,
 };
 
-const incrementCounter = () => {
+const getTodosRequest = () => {
   return {
-    type: INCREMENT,
-  };
-};
-const decrementCounter = () => {
-  return {
-    type: DECREMENT,
-  };
-};
-const resetCounter = () => {
-  return {
-    type: RESET,
+    type: GET_TODOS_REQUEST,
   };
 };
 
-const incrementCounterByValue = (value) => {
-    return {
-      type: INCREMENT_BY_VALUE,
-      payload: value,
-    };
+const getTodosSuccess = (todos) => {
+  return {
+    type: GET_TODOS_SUCCESS,
+    payload: todos,
   };
+};
+const getTodosFailed = (error) => {
+  return {
+    type: GET_TODOS_FAILED,
+    payload: error,
+  };
+};
 
-const counterReducer = (state = initialCounterState, action) => {
+const todosReducer = (state = initialTodosState, action) => {
   switch (action.type) {
-    case INCREMENT:
+    case GET_TODOS_REQUEST:
       return {
         ...state,
-        count: state.count + 1,
+        isLoading: true,
       };
-    case DECREMENT:
+    case GET_TODOS_SUCCESS:
       return {
         ...state,
-        count: state.count - 1,
+        todos: action.payload,
+        isLoading: false,
       };
-    case RESET:
+    case GET_TODOS_FAILED:
       return {
         ...state,
-        count: 0,
+        isLoading: false,
+        error: action.payload,
       };
-
-    case INCREMENT_BY_VALUE:
-        return {
-          ...state,
-          count: state.count + action.payload,
-    };
 
     default:
       state;
   }
 };
 
-const store = createStore(counterReducer, applyMiddleware(logger));
+// async action creator
+// thunk-middleware allows us to return a function isntead of obejct
+const fetchData = () => {
+  return (dispatch) => {
+    dispatch(getTodosRequest());
+    axios
+      .get(TODOS_URL)
+      .then((res) => {
+        const todos = res.data;
+        const titles = todos.map((todo) => todo.title);
+        dispatch(getTodosSuccess(titles));
+      })
+      .catch((err) => {
+        const error = err.message;
+        dispatch(getTodosFailed(error));
+      });
+  };
+};
+
+const store = createStore(todosReducer, applyMiddleware(reduxThunk));
 
 store.subscribe(() => {
   console.log(store.getState());
 });
 
-store.dispatch(incrementCounter());
-store.dispatch(incrementCounter());
-store.dispatch(decrementCounter());
-store.dispatch(resetCounter());
-store.dispatch(incrementCounterByValue(5));
+store.dispatch(fetchData());
